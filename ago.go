@@ -29,6 +29,7 @@ func CreateElementContent(content string) (elements []Element) {
 func CreateElement(domType string, props map[string]interface{}, children []Element) (e Element) {
 	e.DomType = domType
 	e.Dom = js.Global().Get("document").Call("createElement", domType)
+	e.Children = children
 
 	for _, c := range children {
 		e.Dom.Call("appendChild", c.Dom)
