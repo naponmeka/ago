@@ -10,7 +10,7 @@ type Element struct {
 	DomType    string
 	Props      map[string]interface{}
 	DomContent string
-	Children   []Element
+	Children   *[]Element
 	Dom        js.Value
 }
 
@@ -29,7 +29,7 @@ func CreateElementContent(content string) (elements []Element) {
 func CreateElement(domType string, props map[string]interface{}, children []Element) (e Element) {
 	e.DomType = domType
 	e.Dom = js.Global().Get("document").Call("createElement", domType)
-	e.Children = children
+	e.Children = &children
 
 	for _, c := range children {
 		e.Dom.Call("appendChild", c.Dom)
@@ -50,6 +50,6 @@ func CreateElement(domType string, props map[string]interface{}, children []Elem
 }
 
 // Render is ..
-func Render(element Element, rootElement js.Value) {
+func Render(rootElement js.Value, element Element) {
 	rootElement.Call("appendChild", element.Dom)
 }
