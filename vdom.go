@@ -10,13 +10,36 @@ const REMOVE_PROP = "REMOVE PROP"
 type patch struct {
 	mode            string
 	element         *Element
-	props           map[string]interface{}
+	propsPatches    []propPatch
 	childrenPatches []patch
+}
+
+type propPatch struct {
+	mode  string
+	name  string
+	value interface{}
 }
 
 func changed(newElement, oldElement *Element) bool {
 	return newElement.DomType != oldElement.DomType ||
 		newElement.DomType == "content" && newElement.DomContent != oldElement.DomContent
+}
+
+func diffProps(newElement, oldElement *Element) []propPatch {
+	propPatches := []propPatch{}
+	for k, val := range oldElement.Props {
+		if _, exits := newElement.Props[k]; !exits {
+			propPatches = append(propPatches, propPatch{mode: REMOVE_PROP, name: k, value: val})
+		}
+	}
+	for k, val := range newElement.Props {
+		oldVal, oldExits := oldElement.Props[k]
+		if !oldExits || oldVal != val {
+			propPatches = append(propPatches, propPatch{mode: SET_PROP, name: k, value: val})
+
+		}
+	}
+	return propPatches
 }
 
 func diff(newElement, oldElement *Element) patch {
@@ -28,8 +51,8 @@ func diff(newElement, oldElement *Element) patch {
 		return patch{mode: REPLACE, element: newElement}
 	} else if newElement.DomType != "content" {
 		return patch{
-			mode: UPDATE,
-			// props:    diffProps(newElement, oldElement),
+			mode:            UPDATE,
+			propsPatches:    diffProps(newElement, oldElement),
 			childrenPatches: diffChildren(newElement, oldElement),
 		}
 	}
@@ -88,6 +111,7 @@ func patchDiff(parent *Element, p patch, index int) int {
 		parent.Dom.Call("replaceChild", newEle.Dom, currentEle.Dom)
 		(*parent.Children)[index] = newEle
 	case UPDATE:
+		patchProp(currentEle, p.propsPatches)
 		newChildren := []Element{}
 		indexToBeDeleted := make(map[int]bool)
 		for i := 0; i < len(p.childrenPatches); i++ {
@@ -107,4 +131,14 @@ func patchDiff(parent *Element, p patch, index int) int {
 
 	}
 	return -1
+}
+
+func patchProp(element *Element, propPatches []propPatch) {
+	for _, pp := range propPatches {
+		if pp.mode == SET_PROP {
+			setProp(element, pp.name, pp.value)
+		} else if pp.mode == REMOVE_PROP {
+			removeProp(element, pp.name)
+		}
+	}
 }

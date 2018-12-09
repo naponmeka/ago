@@ -31,25 +31,37 @@ func CreateElementContent(content string, createRealDom bool) (elements []Elemen
 func CreateElement(domType string, props map[string]interface{}, children []Element, createRealDom bool) (e Element) {
 	e.DomType = domType
 	e.Children = &children
+	e.Props = props
 	if createRealDom == true {
 		e.Dom = js.Global().Get("document").Call("createElement", domType)
 		for _, c := range children {
 			e.Dom.Call("appendChild", c.Dom)
 		}
-	}
-	for k, v := range props {
-		if v, ok := v.(string); ok {
-			e.Dom.Call("setAttribute", k, v)
+		for k, v := range props {
+			setProp(&e, k, v)
 		}
-		if v, ok := v.(map[string]string); ok {
-			str := ""
-			for k, a := range v {
-				str = str + fmt.Sprintf(" %s:%s;", k, a)
-			}
-			e.Dom.Call("setAttribute", k, str)
-		}
+
 	}
 	return e
+}
+
+func setProp(e *Element, key string, prop interface{}) {
+	e.Props[key] = prop
+	if prop, ok := prop.(string); ok {
+		e.Dom.Call("setAttribute", key, prop)
+	}
+	if prop, ok := prop.(map[string]string); ok {
+		str := ""
+		for k, a := range prop {
+			str = str + fmt.Sprintf(" %s:%s;", k, a)
+		}
+		e.Dom.Call("setAttribute", key, str)
+	}
+}
+
+func removeProp(e *Element, key string) {
+	delete(e.Props, key)
+	e.Dom.Call("removeAttribute", key)
 }
 
 // CreateElementRecursive is ..

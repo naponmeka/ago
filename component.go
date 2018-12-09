@@ -1,7 +1,6 @@
 package ago
 
 import (
-	"fmt"
 	"syscall/js"
 )
 
@@ -26,9 +25,7 @@ func CreateComponent(gox string, state interface{}) Component {
 func (c *Component) ChangeState(value interface{}) {
 	newElement := Transform(c.gox, value, false)
 	patch := diff(&newElement, &c.VDom)
-	fmt.Println(patch)
 	patchDiff(&c.root, patch, 0)
-	fmt.Println("DONE change state")
 }
 
 // Render ...
