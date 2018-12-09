@@ -69,11 +69,11 @@ func patchDiff(parent *Element, p patch, index int) int {
 	case CREATE:
 		newEle := Element{}
 		if p.element.DomType == "content" {
-			newEle = CreateElementContent(p.element.DomContent)[0]
+			newEle = CreateElementContent(p.element.DomContent, true)[0]
 		} else {
-			newEle = CreateElement(p.element.DomType, p.element.Props, *p.element.Children)
+			newEle = CreateElementRecursive(p.element.DomType, p.element.DomContent, p.element.Props, *p.element.Children, true)
 		}
-		parent.Dom.Call("appendChild", newEle.Dom)
+		parent.Dom.Call("appendChild", newEle.Dom) // !!!!
 		*parent.Children = append(*parent.Children, newEle)
 	case REMOVE:
 		parent.Dom.Call("removeChild", currentEle.Dom)
@@ -81,9 +81,9 @@ func patchDiff(parent *Element, p patch, index int) int {
 	case REPLACE:
 		newEle := Element{}
 		if p.element.DomType == "content" {
-			newEle = CreateElementContent(p.element.DomContent)[0]
+			newEle = CreateElementContent(p.element.DomContent, true)[0]
 		} else {
-			newEle = CreateElement(p.element.DomType, p.element.Props, *p.element.Children)
+			newEle = CreateElementRecursive(p.element.DomType, p.element.DomContent, p.element.Props, *p.element.Children, true)
 		}
 		parent.Dom.Call("replaceChild", newEle.Dom, currentEle.Dom)
 		(*parent.Children)[index] = newEle

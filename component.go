@@ -18,19 +18,20 @@ func CreateComponent(gox string, state interface{}) Component {
 	return Component{
 		gox:   gox,
 		state: state,
-		VDom:  Transform(gox, state),
+		VDom:  Transform(gox, state, true),
 	}
 }
 
 // ChangeState ...
 func (c *Component) ChangeState(value interface{}) {
-	newElement := Transform(c.gox, value)
+	newElement := Transform(c.gox, value, false)
 	patch := diff(&newElement, &c.VDom)
 	fmt.Println(patch)
 	patchDiff(&c.root, patch, 0)
 	fmt.Println("DONE change state")
 }
 
+// Render ...
 func (c *Component) Render(parentID string) {
 	rootDom := js.Global().Get("document").Call("getElementById", parentID)
 	rootDom.Call("appendChild", c.VDom.Dom)

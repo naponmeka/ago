@@ -15,24 +15,27 @@ type Element struct {
 }
 
 // CreateElementContent is for creating Content element (text node)
-func CreateElementContent(content string) (elements []Element) {
+func CreateElementContent(content string, createRealDom bool) (elements []Element) {
 	e := Element{
 		DomType:    "content",
 		DomContent: content,
-		Dom:        js.Global().Get("document").Call("createTextNode", content),
+	}
+	if createRealDom == true {
+		e.Dom = js.Global().Get("document").Call("createTextNode", content)
 	}
 	elements = append(elements, e)
 	return
 }
 
 // CreateElement is for creating element
-func CreateElement(domType string, props map[string]interface{}, children []Element) (e Element) {
+func CreateElement(domType string, props map[string]interface{}, children []Element, createRealDom bool) (e Element) {
 	e.DomType = domType
-	e.Dom = js.Global().Get("document").Call("createElement", domType)
 	e.Children = &children
-
-	for _, c := range children {
-		e.Dom.Call("appendChild", c.Dom)
+	if createRealDom == true {
+		e.Dom = js.Global().Get("document").Call("createElement", domType)
+		for _, c := range children {
+			e.Dom.Call("appendChild", c.Dom)
+		}
 	}
 	for k, v := range props {
 		if v, ok := v.(string); ok {
@@ -47,6 +50,23 @@ func CreateElement(domType string, props map[string]interface{}, children []Elem
 		}
 	}
 	return e
+}
+
+// CreateElementRecursive is ..
+func CreateElementRecursive(domType string, domContent string, props map[string]interface{}, children []Element, createRealDom bool) Element {
+	childElements := []Element{}
+	for _, child := range children {
+		childrenOfChild := []Element{}
+		if child.Children != nil {
+			childrenOfChild = *child.Children
+		}
+		childElements = append(childElements, CreateElementRecursive(child.DomType, child.DomContent, child.Props, childrenOfChild, createRealDom))
+	}
+	if len(children) == 0 && string(domContent) != "" {
+		childElements = CreateElementContent(string(domContent), createRealDom)
+	}
+	x := CreateElement(domType, props, childElements, createRealDom)
+	return x
 }
 
 // Render is ..

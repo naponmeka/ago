@@ -7,12 +7,12 @@ import (
 )
 
 // Transform is ...
-func Transform(gox string, state interface{}) Element {
+func Transform(gox string, state interface{}, createRealDom bool) Element {
 	tmpl := template.Must(template.New("").Parse(gox))
 	buf := new(bytes.Buffer)
 	tmpl.Execute(buf, state)
 	htmlStr := buf.String()
-	element := createElementFromXML([]byte(htmlStr))
+	element := createElementFromXML([]byte(htmlStr), createRealDom)
 	return element
 }
 
@@ -29,7 +29,27 @@ func (n *Node) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
 	return d.DecodeElement((*node)(n), &start)
 }
 
-func createElementFromXML(data []byte) Element {
+func nodeToElement(n Node) Element {
+	childElements := []Element{}
+	for _, child := range n.Nodes {
+		childElements = append(childElements, nodeToElement(child))
+	}
+	props := make(map[string]interface{})
+	if len(n.Attrs) > 0 {
+		for _, att := range n.Attrs {
+			props[att.Name.Local] = att.Value
+		}
+	}
+	element := Element{
+		DomType:    n.XMLName.Local,
+		Props:      props,
+		DomContent: string(n.Content),
+		Children:   &childElements,
+	}
+	return element
+}
+
+func createElementFromXML(data []byte, createRealDom bool) Element {
 	buf := bytes.NewBuffer(data)
 	dec := xml.NewDecoder(buf)
 
@@ -38,24 +58,6 @@ func createElementFromXML(data []byte) Element {
 	if err != nil {
 		panic(err)
 	}
-	return produceElement(n)
-}
-
-func produceElement(n Node) Element {
-	childElements := []Element{}
-	for _, child := range n.Nodes {
-		childElements = append(childElements, produceElement(child))
-	}
-	if len(n.Nodes) == 0 && string(n.Content) != "" {
-		childElements = CreateElementContent(string(n.Content))
-	}
-	props := make(map[string]interface{})
-	if len(n.Attrs) > 0 {
-		for _, att := range n.Attrs {
-			props[att.Name.Local] = att.Value
-		}
-	}
-
-	x := CreateElement(n.XMLName.Local, props, childElements)
-	return x
+	element := nodeToElement(n)
+	return CreateElementRecursive(element.DomType, element.DomType, element.Props, *element.Children, createRealDom)
 }
