@@ -29,8 +29,7 @@ func (c *Component) ChangeState(value interface{}) {
 }
 
 // Render ...
-func (c *Component) Render(parentID string) {
-	rootDom := js.Global().Get("document").Call("getElementById", parentID)
+func (c *Component) Render(rootDom js.Value) {
 	rootDom.Call("appendChild", c.VDom.Dom)
 	rootElement := Element{
 		Dom:      rootDom,
