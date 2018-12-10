@@ -91,3 +91,10 @@ func CreateElementRecursive(domType string, domContent string, props map[string]
 func Render(rootElement js.Value, element Element) {
 	rootElement.Call("appendChild", element.Dom)
 }
+
+// RemoveAllChild ...
+func RemoveAllChild(dom js.Value) {
+	for dom.Call("hasChildNodes").Bool() == true {
+		dom.Call("removeChild", dom.Get("lastChild"))
+	}
+}

@@ -28,9 +28,23 @@ func (rt *Router) JsNavigate(i []js.Value) {
 	rt.Navigate(path)
 }
 
+// JsGoBack ...
+func (rt *Router) JsGoBack(i []js.Value) {
+	path := js.Global().Get("window").Get("location").Get("pathname").String()
+	for _, route := range rt.Routes {
+		if route.Path == path {
+			RemoveAllChild(rt.RootDom)
+			route.Component.Render(rt.RootDom)
+			return
+		}
+	}
+	rt.RootDom.Set("innerHTML", "not found")
+}
+
 // Register ...
 func (rt *Router) Register() {
 	js.Global().Set(NAV_TO_JS_FUNC, js.NewCallback(rt.JsNavigate))
+	js.Global().Get("window").Set("onpopstate", js.NewCallback(rt.JsGoBack))
 }
 
 // Navigate ...
@@ -38,9 +52,7 @@ func (rt *Router) Navigate(path string) {
 	for _, route := range rt.Routes {
 		if route.Path == path {
 			js.Global().Get("window").Get("history").Call("pushState", nil, "", path)
-			for rt.RootDom.Call("hasChildNodes").Bool() == true {
-				rt.RootDom.Call("removeChild", rt.RootDom.Get("lastChild"))
-			}
+			RemoveAllChild(rt.RootDom)
 			route.Component.Render(rt.RootDom)
 			return
 		}
