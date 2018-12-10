@@ -6,6 +6,7 @@ import (
 
 const HISTORY_MODE = "HISTORY"
 const HASH_MODE = "HASH"
+const NAV_TO_JS_FUNC = "agoRouterNavigateTo"
 
 // Route ...
 type Route struct {
@@ -21,8 +22,19 @@ type Router struct {
 	RootDom js.Value
 }
 
+// JsNavigate ...
+func (rt *Router) JsNavigate(i []js.Value) {
+	path := i[0].String()
+	rt.Navigate(path)
+}
+
+// Register ...
+func (rt *Router) Register() {
+	js.Global().Set(NAV_TO_JS_FUNC, js.NewCallback(rt.JsNavigate))
+}
+
 // Navigate ...
-func (rt Router) Navigate(path string) {
+func (rt *Router) Navigate(path string) {
 	for _, route := range rt.Routes {
 		if route.Path == path {
 			js.Global().Get("window").Get("history").Call("pushState", nil, "", path)

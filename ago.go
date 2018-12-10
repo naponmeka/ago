@@ -49,6 +49,12 @@ func setProp(e *Element, key string, prop interface{}) {
 	e.Props[key] = prop
 	if prop, ok := prop.(string); ok {
 		e.Dom.Call("setAttribute", key, prop)
+		if key == "route" {
+			e.Dom.Call("setAttribute",
+				"onclick",
+				fmt.Sprintf("javascript:%s(\"%s\");", NAV_TO_JS_FUNC, prop),
+			)
+		}
 	}
 	if prop, ok := prop.(map[string]string); ok {
 		str := ""
